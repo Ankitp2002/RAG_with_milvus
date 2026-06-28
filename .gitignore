@@ -1,0 +1,9 @@
+*venv*
+.vscode
+*.db
+tmp
+.env
+extracted_images
+*.md
+*.jpg
+*pycache*
