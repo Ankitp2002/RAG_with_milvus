@@ -7,6 +7,8 @@ from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.embeddings.fastembed import FastEmbedEmbedding
 from utils import handle_err_and_raise
 from .parser_documents.pdf_parser import pdf_parse_and_enrich_document
+from .parser_documents.docx_parser import docx_parse_and_enrich_document
+
 from config import MILVUS_DB_URL
 
 Settings.embed_model = FastEmbedEmbedding(
@@ -56,14 +58,22 @@ def process_and_index_file(file_path: str) -> dict:
 @handle_err_and_raise
 def layout_aware_parsing_engin(file_path: str) -> list[Document]:
     """convert all unstructured files to markdown formate for vectorization"""
-    # # 4. Bind MarkItDown natively to LlamaIndex Reader
-    # md_parser = MarkItDown(llm_client=llm_vision_llama_17b)
-    # markitdown_reader = MarkItDownReader(md_parser=md_parser)
-    # documents = markitdown_reader.load_data(file_path=file_path)
+    file_exe = file_path.split(".")[-1].lower()
+    documents = [Document()]
 
-    documents = pdf_parse_and_enrich_document(file_path)  # PDF
+    if file_exe == "pdf":
+        documents = pdf_parse_and_enrich_document(file_path)  #PDF
+    
+    if file_exe == "docx":
+        documents = docx_parse_and_enrich_document(file_path)  # DOCX
+    
+    if file_exe in ["xls", "xlsx"]:
+        documents = docx_parse_and_enrich_document(file_path)  # DOCX
+    
+    if file_exe == "docx":
+        documents = docx_parse_and_enrich_document(file_path)  # DOCX
+
     return documents
-
 
 @handle_err_and_raise
 def text_embedding_vector_storing(collection_name, documents: List[Document]) -> None:
