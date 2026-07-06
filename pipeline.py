@@ -19,7 +19,7 @@ tools_list = [
     query_unstructured_docs,
     query_structured_docs,
     unstructured_summary,
-    structured_summary,
+    # structured_summary,
 ]
 tool_node = ToolNode(tools_list)
 

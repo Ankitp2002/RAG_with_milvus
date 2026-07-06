@@ -1,6 +1,5 @@
 import os
 from typing import List
-import warnings
 import pandas as pd
 from llama_index.core import Document, VectorStoreIndex, StorageContext, Settings
 from llama_index.vector_stores.milvus import MilvusVectorStore
@@ -8,11 +7,13 @@ from llama_index.embeddings.fastembed import FastEmbedEmbedding
 from utils import handle_err_and_raise
 from .parser_documents.pdf_parser import pdf_parse_and_enrich_document
 from .parser_documents.docx_parser import docx_parse_and_enrich_document
+from .parser_documents.csv_parser import csv_parse_and_enrich_document
+from .parser_documents.excel_parser import excel_parse_and_enrich_document
 
 from config import MILVUS_DB_URL
 
 Settings.embed_model = FastEmbedEmbedding(
-    model_name="BAAI/bge-large-en-v1.5"
+    model_name="BAAI/bge-large-en-v1.5", cache_dir="./fastembed_cache"
 )  # Embedding Model
 Settings.llm = None
 
@@ -28,9 +29,19 @@ def process_and_index_file(file_path: str) -> dict:
 
     # 1. Structured Data Engine (CSV/Excel)
     if ext in [".csv", ".xlsx", ".xls"]:
-        df = pd.read_csv(file_path) if ext == ".csv" else pd.read_excel(file_path)
-        df.to_pickle(f"./tmp/{file_name}.pkl")
-        return {"file_name": file_name, "type": "structured", "format": ext}
+
+        if ext == ".csv":
+            meta_info = csv_parse_and_enrich_document(file_path)  # CSV
+        else:
+            meta_info = excel_parse_and_enrich_document(file_path)  # Excel
+
+        return {
+            "file_name": file_name,
+            "type": "structured",
+            "format": ext,
+            "collection_name": None,
+            "meta_info": meta_info,
+        }
 
     # 2. Unstructured Data Engine (PDF/DOCX -> LlamaIndex -> Milvus)
     else:
@@ -62,18 +73,13 @@ def layout_aware_parsing_engin(file_path: str) -> list[Document]:
     documents = [Document()]
 
     if file_exe == "pdf":
-        documents = pdf_parse_and_enrich_document(file_path)  #PDF
-    
-    if file_exe == "docx":
-        documents = docx_parse_and_enrich_document(file_path)  # DOCX
-    
-    if file_exe in ["xls", "xlsx"]:
-        documents = docx_parse_and_enrich_document(file_path)  # DOCX
-    
+        documents = pdf_parse_and_enrich_document(file_path)  # PDF
+
     if file_exe == "docx":
         documents = docx_parse_and_enrich_document(file_path)  # DOCX
 
     return documents
+
 
 @handle_err_and_raise
 def text_embedding_vector_storing(collection_name, documents: List[Document]) -> None:

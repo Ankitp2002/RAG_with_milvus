@@ -7,3 +7,4 @@ extracted_images
 *.md
 *.jpg
 *pycache*
+*cache*
