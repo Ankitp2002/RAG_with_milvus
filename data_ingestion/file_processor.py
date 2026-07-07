@@ -1,6 +1,5 @@
 import os
 from typing import List
-import pandas as pd
 from llama_index.core import Document, VectorStoreIndex, StorageContext, Settings
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.embeddings.fastembed import FastEmbedEmbedding
@@ -10,7 +9,7 @@ from .parser_documents.docx_parser import docx_parse_and_enrich_document
 from .parser_documents.csv_parser import csv_parse_and_enrich_document
 from .parser_documents.excel_parser import excel_parse_and_enrich_document
 
-from config import MILVUS_DB_URL
+from config import MILVUS_DB_URL, TEMP_DIR
 
 Settings.embed_model = FastEmbedEmbedding(
     model_name="BAAI/bge-large-en-v1.5", cache_dir="./fastembed_cache"
@@ -29,11 +28,11 @@ def process_and_index_file(file_path: str) -> dict:
 
     # 1. Structured Data Engine (CSV/Excel)
     if ext in [".csv", ".xlsx", ".xls"]:
-
+        file_name = f"{TEMP_DIR}/{file_name.split('.')[0]}.pkl"
         if ext == ".csv":
-            meta_info = csv_parse_and_enrich_document(file_path)  # CSV
+            meta_info = csv_parse_and_enrich_document(file_path, file_name)  # CSV
         else:
-            meta_info = excel_parse_and_enrich_document(file_path)  # Excel
+            meta_info = excel_parse_and_enrich_document(file_path, file_name)  # Excel
 
         return {
             "file_name": file_name,

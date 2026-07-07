@@ -31,9 +31,8 @@ def financial_supervisor_agent(state: ChatBotState):
     llm = llm_gpt_oss_120.bind_tools(tools_list)
 
     available_collections = [
-        f"File: {f['file_name']} -> collection_name: {f.get('collection_name')}"
+        f"File: {f['file_name']} -> collection_name: {f.get('collection_name')} -> meta_information: {f.get("meta_info", None)}"
         for f in state["active_files"]
-        if f["type"] == "unstructured"
     ]
     collections_context = (
         "\n".join(available_collections)

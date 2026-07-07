@@ -3,6 +3,7 @@ import warnings
 import streamlit as st
 import os
 from langchain_core.messages import HumanMessage
+from config import TEMP_DIR
 from data_ingestion.file_processor import process_and_index_file
 from pipeline import financial_bot_executor
 from dotenv import load_dotenv
@@ -46,8 +47,8 @@ with st.sidebar:
 
     if st.button("Process Assets") and uploaded_files:
         for f in uploaded_files:
-            temp_path = os.path.join("./tmp", f.name)
-            os.makedirs("./tmp", exist_ok=True)
+            temp_path = os.path.join(TEMP_DIR, f.name)
+            os.makedirs(TEMP_DIR, exist_ok=True)
             with open(temp_path, "wb") as buffer:
                 buffer.write(f.read())
 
