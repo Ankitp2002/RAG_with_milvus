@@ -1,7 +1,6 @@
-import uuid
-
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
+from agents.utils import manage_llm_context_window
 from state import ChatBotState
 from system_prompt_constant import SYSTEM_PROMPT
 from tools.structured_tool import query_structured_docs
@@ -11,7 +10,7 @@ from tools.vector_rag_tool import query_unstructured_docs
 # Import your other modular tools here...
 
 from langchain_core.messages import AIMessage, SystemMessage
-from agents.clients import llm_gpt_oss_120, llm_gemini_2_5_flash
+from agents.clients import available_client
 from utils import handle_err_and_raise
 
 # Register all modular LlamaIndex tools inside LangGraph bounds
@@ -27,12 +26,11 @@ tool_node = ToolNode(tools_list)
 # Define the Master Supervisor Brain Node
 @handle_err_and_raise
 def financial_supervisor_agent(state: ChatBotState):
-    # llm = llm_gemini_2_5_flash.bind_tools(tools_list)
-    llm = llm_gpt_oss_120.bind_tools(tools_list)
+    llm = available_client[state.selected_llm].bind_tools(tools_list)
 
     available_collections = [
         f"File: {f['file_name']} -> collection_name: {f.get('collection_name')} -> meta_information: {f.get("meta_info", None)}"
-        for f in state["active_files"]
+        for f in state.active_files
     ]
     collections_context = (
         "\n".join(available_collections)
@@ -41,19 +39,24 @@ def financial_supervisor_agent(state: ChatBotState):
     )
     system_prompt = SYSTEM_PROMPT.format_map(
         {
-            "current_language": state["current_language"],
+            "current_language": state.current_language,
             "collections_context": collections_context,
         }
     )
 
-    formatted_messages = [SystemMessage(content=system_prompt)] + state["messages"]
+    formatted_messages = [SystemMessage(content=system_prompt)] + state.messages
+    
+    # context window manager -- token limit. 
+    formatted_messages = manage_llm_context_window(llm, formatted_messages)
+    
     response = llm.invoke(formatted_messages)
+    
     return {"messages": [response]}
 
 
 @handle_err_and_raise
 def determine_next_node(state: ChatBotState):
-    last_message = state["messages"][-1]
+    last_message = state.messages[-1]
     if isinstance(last_message, AIMessage) and last_message.tool_calls:
         return "execute_tools"
     return END

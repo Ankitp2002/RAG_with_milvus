@@ -1,17 +1,25 @@
+from typing import Union
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
+
+available_client: dict[str, ChatGroq | ChatGoogleGenerativeAI] = {}
 
 # =====================================================================
 # GROK Models
 # =====================================================================
 llm_gpt_oss_120 = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+available_client["llm_gpt_oss_120"] = llm_gpt_oss_120
+
 llm_vision_llama_17b = ChatGroq(model="meta-llama/llama-4-scout-17b-16e-instruct", temperature=0.3)
+available_client["llm_vision_llama_17b"] = llm_vision_llama_17b
 # =====================================================================
 
 # =====================================================================
 # Gemini Models
 # =====================================================================
 llm_gemini_2_5_flash = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
+available_client["llm_gemini_2_5_flash"] = llm_gemini_2_5_flash
 # =====================================================================
 
 # =====================================================================

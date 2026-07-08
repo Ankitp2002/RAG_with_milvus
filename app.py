@@ -9,6 +9,8 @@ from pipeline import financial_bot_executor
 from dotenv import load_dotenv
 import logging
 
+from state import ChatBotState
+
 load_dotenv(override=True)
 
 warnings.filterwarnings(
@@ -73,13 +75,13 @@ if user_query := st.chat_input(
     st.session_state.messages.append(new_human_msg)
 
     # Package payload tracking parameters into LangGraph Initial State
-    initial_graph_state = {
-        "messages": st.session_state.messages,
-        "active_files": st.session_state.uploaded_registry,
-        "current_language": st.session_state.lang,
-        "context_buffer": "",
-    }
-
+    initial_graph_state = ChatBotState(
+        messages=st.session_state.messages,
+        active_files=st.session_state.uploaded_registry,
+        current_language=st.session_state.lang,
+        context_buffer="",
+    )
+    
     # Run the hybrid compilation graph engine
     with st.spinner("Analyzing Financial Information..."):
         updated_state = financial_bot_executor.invoke(initial_graph_state)

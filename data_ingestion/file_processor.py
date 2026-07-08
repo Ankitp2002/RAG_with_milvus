@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import List
 from llama_index.core import Document, VectorStoreIndex, StorageContext, Settings
 from llama_index.vector_stores.milvus import MilvusVectorStore
@@ -8,7 +9,6 @@ from .parser_documents.pdf_parser import pdf_parse_and_enrich_document
 from .parser_documents.docx_parser import docx_parse_and_enrich_document
 from .parser_documents.csv_parser import csv_parse_and_enrich_document
 from .parser_documents.excel_parser import excel_parse_and_enrich_document
-
 from config import MILVUS_DB_URL, TEMP_DIR
 
 Settings.embed_model = FastEmbedEmbedding(
@@ -86,7 +86,6 @@ def text_embedding_vector_storing(collection_name, documents: List[Document]) ->
     # Initialize LlamaIndex's Milvus Storage Store
     vector_store = MilvusVectorStore(
         uri=MILVUS_DB_URL,  # local DB | we can add dedicated container as well
-        # uri=MILVUS_DB_URL,  # local DB | we can add dedicated container as well
         collection_name=collection_name,
         dim=1024,  # Matches with embedding mode vectors dimensions ((we can also use standard OpenAI text-embedding-3-small or text-davinci dimensions))
         overwrite=True,
@@ -103,9 +102,12 @@ def for_validation_save_as_markdown(documents, file_name):
     """Validate Unstructured data convert appropriate (image as summary, table as markdown table among other) or not"""
     # Extract the parsed text content
     parsed_text = "\n\n".join([doc.text for doc in documents])
-
+    
+    markdown_dir = Path("./validate_doc_md")
+    markdown_dir.mkdir(exist_ok=True)
+    
     # 1. Save as Markdown (.md) to check original structure
-    md_path = f"{file_name}.md"
+    md_path = f"{markdown_dir}/{file_name}.md"
     with open(md_path, "w", encoding="utf-8") as f:
         f.write(parsed_text)
 
