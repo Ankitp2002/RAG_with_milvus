@@ -4,8 +4,10 @@
                                  |
           +----------------------+----------------------+
           |                                             |
- [Unstructured Data]                             [Structured Data]
- (PDF, DOCX, TXT, etc.)                          (CSV, XLSX, etc.)
+ +------------------------+                    +---------------------+
+ |  [Unstructured Data]   |                    |  [Structured Data]  |
+ | (PDF, DOCX, TXT, etc.) |                    |  (CSV, XLSX, etc.)  |
+ +--------v--------------+                     +--------v------------+
           |                                             |
  +--------v--------+                                    |
  | Docling Parser  |                             +------v------+
