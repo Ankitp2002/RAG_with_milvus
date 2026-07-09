@@ -1,13 +1,11 @@
-from typing import TypedDict, Annotated, List, Dict, Any
+from typing import Annotated, List, Dict, Any
+from pydantic import BaseModel, Field
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 
-class ChatBotState(TypedDict):
-    # Automatically manages and appends conversation history
-    messages: Annotated[List[BaseMessage], add_messages]
-    # Tracks currently uploaded tracking maps: [{"file_name": "...", "type": "structured|unstructured", "path": "..."}]
-    active_files: List[Dict[str, str]]
-    # Tracks session language dynamically ('en', 'es', 'fr')
-    current_language: str
-    # Shared clipboard for tools to deposit complex tabular context before generating final text
-    context_buffer: str
+class ChatBotState(BaseModel):
+    messages: Annotated[List[BaseMessage], add_messages] = Field(default_factory=list)  # History
+    active_files: list = Field(default_factory=list) # uploaded file
+    current_language: str = "en" # selected language
+    context_buffer: str = "" #
+    selected_llm: str = Field(default="llm_gpt_oss_120")

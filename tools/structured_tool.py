@@ -1,24 +1,33 @@
 from langchain_core.tools import tool
 from utils import handle_err_and_raise
+import pandas as pd
 
 
 @tool
 @handle_err_and_raise
-def query_structured_docs(query_str: str, collection_name: str) -> str:
-    """Executes a targeted search or specific lookup query against a structured data table or CSV file.
-
-    Use this capability ONLY when the user asks for a specific metric, row lookup, cell value,
-    or filtered data point from tabular datasets (e.g., 'What was the net profit in 2023?',
-    'Find the row for marketing expenses').
-
-    Do NOT use this tool if the user wants a broad overview, general trend analysis, or wants to
-    summarize/extract the entire file.
-
-    Args:
-        query_str (str): The specific question or search criteria requested by the user.
-        collection_name (str): The exact collection identifier associated with the target structured asset.
-
-    Returns:
-        str: The extracted structured data rows/cells matching the query, or an error message.
+def query_structured_docs(
+    file_path: str, excel_query: dict[str, str] = {}, csv_query: str = ""
+) -> dict:
     """
-    return "query_structured_docs"
+    Query structured documents from a pickle file.
+    file_path: Path to the pickle file.
+    excel_query: dict {sheet_name: query} for querying Excel files.
+    csv_query: Pandas query string for querying CSV files.
+    """
+    df = pd.read_pickle(file_path)
+
+    response_dict = {}
+    if excel_query:
+        excel_query_result_mapping = {}
+        for sheet_name, query in excel_query.items():
+            _df = df[sheet_name]
+            _df = _df.query(query)
+            excel_query_result_mapping[sheet_name] = _df.to_dict(orient="split")
+
+        response_dict["data"] = excel_query_result_mapping
+
+    elif csv_query:
+        df = df.query(csv_query)
+        response_dict["data"] = df.to_dict(orient="split")
+
+    return response_dict

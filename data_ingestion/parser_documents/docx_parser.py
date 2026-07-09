@@ -6,20 +6,49 @@ from utils import handle_err_and_raise
 from pathlib import Path
 from llama_index.core import Document
 import os
-import pypdfium2
 from config import UNSTRUCTURED_UNSTRUCTURED_DOCUMENT_CONVERT_CHUNK_SIZE
+import os
+import zipfile
+from pathlib import Path
+from docx import Document as docx_doc
+from lxml import etree
+
+
+def get_docx_page_count(abs_path: str) -> int:
+    """
+    Extracts the estimated/declared total pages from the Word document's
+    core metadata properties (app.xml) without fully rendering the document.
+    Fallback is 1 if the property isn't found.
+    """
+    try:
+        with zipfile.ZipFile(abs_path) as zf:
+            if "docProps/app.xml" in zf.namelist():
+                xml_content = zf.read("docProps/app.xml")
+                root = etree.fromstring(xml_content)
+                # Find the <Pages> tag in the app.xml
+                pages_elem = root.find("{http://openxmlformats.org}Pages")
+                if pages_elem is not None and pages_elem.text:
+                    return int(pages_elem.text)
+    except Exception as e:
+        print(f"⚠️ Could not read docProps/app.xml: {e}")
+
+    # Fallback to counting paragraphs if metadata is unavailable
+    try:
+        doc = docx_doc(abs_path)
+        page_count = sum(p.contains_page_break for p in doc.paragraphs) + 1
+        return page_count
+    except Exception:
+        return 1
 
 
 @handle_err_and_raise
-def pdf_parse_and_enrich_document(file_path: str) -> list[Document]:
+def docx_parse_and_enrich_document(file_path: str) -> list[Document]:
     abs_path = os.path.abspath(file_path)
 
-    # 1. Inspect the file to count total pages with near-zero RAM usage
-    pdf = pypdfium2.PdfDocument(abs_path)
-    total_pages = len(pdf)
-    del pdf  # Drop reference immediately
+    # 1. Count the pages dynamically using DOCX metadata
+    total_pages = get_docx_page_count(abs_path)
 
-    print(f"📄 Processing total of {total_pages} pages in chunked blocks...")
+    print(f"📄 Processing total of {total_pages} estimated pages in chunked blocks...")
 
     all_markdown_segments = []
     fig_counter = 0

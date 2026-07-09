@@ -4,6 +4,7 @@
 tmp
 .env
 extracted_images
-*.md
+validate_doc_md/
 *.jpg
 *pycache*
+*cache*
